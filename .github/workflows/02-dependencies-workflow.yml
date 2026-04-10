@@ -1,0 +1,42 @@
+name: 02 - Jobs con Dependencias
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # PRIMER JOB: Descarga el codigo y ejecuta el script de Python
+  ejecutar-codigo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar codigo del repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sincronizar dependencias
+        run: uv sync
+
+      - name: Ejecutar script de Python
+        run: uv run python src/hello.py
+
+  # SEGUNDO JOB: Solo corre SI el primero termino bien
+  # La clave es "needs" -- crea la dependencia entre jobs
+  confirmar-exito:
+    runs-on: ubuntu-latest
+    needs: [ejecutar-codigo]
+    steps:
+      - name: Confirmar que todo salio bien
+        run: |
+          echo "==========================================="
+          echo " El job anterior (ejecutar-codigo) termino"
+          echo " correctamente. Este job depende de el."
+          echo "==========================================="
+          echo ""
+          echo " Si 'ejecutar-codigo' hubiera fallado,"
+          echo " este job nunca se ejecutaria."
+          echo "==========================================="

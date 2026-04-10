@@ -15,15 +15,16 @@
 
 ## Que vas a aprender
 
-Este repositorio es una clase practica que te lleva desde cero hasta construir un **pipeline completo de Machine Learning** automatizado con GitHub Actions. Al finalizar seras capaz de:
+Este repositorio es una clase practica que te lleva **de cero a un pipeline de Machine Learning automatizado** con GitHub Actions. Esta organizado en 3 niveles progresivos:
 
-- Entender que es CI/CD y por que es indispensable en proyectos reales.
-- Escribir tus propios workflows en YAML.
-- Encadenar tareas dependientes (DAG de jobs).
-- Automatizar linting, testing, entrenamiento y deploy de un modelo.
+| Nivel | Workflow | Que aprendes |
+|-------|----------|--------------|
+| 1 | Mi Primer Workflow | Que es un Trigger, un Job, un Step y un Runner |
+| 2 | Jobs con Dependencias | Como encadenar Jobs con `needs` |
+| 3 | Pipeline Completo de ML | Lint + Test + Train + Deploy en un DAG real |
 
 > [!NOTE]
-> **Requisitos previos:** Conocimientos basicos de Python y Git. No se necesita experiencia previa con CI/CD ni con GitHub Actions.
+> **Requisitos previos:** Conocimientos basicos de Python y Git. No se necesita experiencia previa con CI/CD.
 
 ---
 
@@ -31,10 +32,12 @@ Este repositorio es una clase practica que te lleva desde cero hasta construir u
 
 1. [Conceptos clave](#conceptos-clave)
 2. [Estructura del repositorio](#estructura-del-repositorio)
-3. [Los Pipelines](#los-pipelines)
-4. [Guia paso a paso](#guia-paso-a-paso)
-5. [Ejecucion local](#ejecucion-local)
-6. [Glosario](#glosario)
+3. [Nivel 1 -- Mi Primer Workflow](#nivel-1----mi-primer-workflow)
+4. [Nivel 2 -- Jobs con Dependencias](#nivel-2----jobs-con-dependencias)
+5. [Nivel 3 -- Pipeline Completo de ML](#nivel-3----pipeline-completo-de-ml)
+6. [Guia paso a paso](#guia-paso-a-paso)
+7. [Ejecucion local](#ejecucion-local)
+8. [Glosario](#glosario)
 
 ---
 
@@ -65,7 +68,7 @@ jobs:                              # QUE tareas se ejecutan
 ```
 
 > [!TIP]
-> **Runner** = maquina virtual temporal que GitHub te presta para ejecutar los pasos. Se destruye al terminar.
+> **Runner** = maquina virtual temporal que GitHub te presta gratis para ejecutar los pasos. Se crea al iniciar y se destruye al terminar.
 
 ---
 
@@ -75,17 +78,18 @@ jobs:                              # QUE tareas se ejecutan
 MasterClass_GithubActions/
 |-- .github/
 |   |-- workflows/
-|       |-- 01-basic-workflow.yml      # Pipeline basico (Hola Mundo)
-|       |-- 02-ml-pipeline.yml         # Pipeline ML con eslabones
+|       |-- 01-basic-workflow.yml          # Nivel 1: Hola Mundo
+|       |-- 02-dependencies-workflow.yml   # Nivel 2: Jobs dependientes
+|       |-- 03-ml-pipeline.yml             # Nivel 3: Pipeline ML completo
 |-- src/
 |   |-- __init__.py
-|   |-- hello.py                       # Script introductorio
-|   |-- train_iris.py                  # Pipeline de entrenamiento (Iris)
+|   |-- hello.py                           # Script introductorio
+|   |-- train_iris.py                      # Pipeline de entrenamiento (Iris)
 |-- tests/
-|   |-- test_hello.py                  # Tests del modulo hello
-|   |-- test_train.py                  # Tests del pipeline ML
-|-- pyproject.toml                     # Dependencias y config del proyecto
-|-- uv.lock                           # Lockfile para builds reproducibles
+|   |-- test_hello.py                      # Tests del modulo hello
+|   |-- test_train.py                      # Tests del pipeline ML
+|-- pyproject.toml                         # Dependencias y config del proyecto
+|-- uv.lock                               # Lockfile para builds reproducibles
 |-- .gitignore
 |-- README.md
 ```
@@ -103,23 +107,80 @@ MasterClass_GithubActions/
 
 ---
 
-## Los Pipelines
-
-### Pipeline 1: Flujo Basico
+## Nivel 1 -- Mi Primer Workflow
 
 **Archivo:** `.github/workflows/01-basic-workflow.yml`
 
-Un solo job que clona el repo, instala `uv`, sincroniza dependencias y ejecuta `hello.py`. Sirve para entender la mecanica fundamental.
+Este es el workflow mas sencillo posible. No necesita Python, ni dependencias, ni codigo. Solo ejecuta comandos de shell para que entiendas la mecanica basica.
+
+### Que hace?
 
 ```text
-[push a main] --> [checkout] --> [setup uv] --> [uv sync] --> [run hello.py]
+[push a main] --> [ echo "Hola Mundo" + info del Runner ]
 ```
 
-### Pipeline 2: ML con Eslabones Dependientes
+### Que aprendes?
 
-**Archivo:** `.github/workflows/02-ml-pipeline.yml`
+- **`on`**: Define *cuando* se ejecuta el workflow (al hacer push, o manualmente).
+- **`jobs`**: Contiene las tareas. Aqui solo hay una: `hola-mundo`.
+- **`runs-on`**: En que tipo de maquina corre (Ubuntu gratuito de GitHub).
+- **`steps`**: Los pasos secuenciales. Cada `run:` ejecuta un comando de terminal.
+- **`workflow_dispatch`**: Permite ejecutar el workflow a mano desde la interfaz.
 
-Cuatro jobs encadenados que forman un grafo dirigido (DAG):
+### Fragmento clave
+
+```yaml
+steps:
+  - name: Saludar desde la nube
+    run: echo "Hola Mundo desde GitHub Actions!"
+```
+
+> [!TIP]
+> Empieza ejecutando este workflow manualmente desde la pestana Actions para ver que pasa.
+
+---
+
+## Nivel 2 -- Jobs con Dependencias
+
+**Archivo:** `.github/workflows/02-dependencies-workflow.yml`
+
+Aqui introducimos el concepto mas importante para construir pipelines: **las dependencias entre Jobs** usando la directiva `needs`.
+
+### Que hace?
+
+```text
+[ejecutar-codigo] --> [confirmar-exito]
+```
+
+Dos Jobs:
+1. **ejecutar-codigo**: Descarga el repo, instala dependencias con `uv`, y ejecuta `hello.py`.
+2. **confirmar-exito**: Solo se ejecuta **si el Job anterior termino bien**. Si falla, este jamas corre.
+
+### Que aprendes?
+
+- **`uses: actions/checkout@v4`**: Accion preconstruida que "clona" tu repo dentro del Runner.
+- **`uses: astral-sh/setup-uv@v5`**: Instala `uv` en el Runner.
+- **`uv sync`**: Crea el entorno virtual e instala todas las dependencias.
+- **`needs: [ejecutar-codigo]`**: La directiva que crea la relacion de dependencia.
+
+### Fragmento clave
+
+```yaml
+confirmar-exito:
+  runs-on: ubuntu-latest
+  needs: [ejecutar-codigo]    # <-- Esto crea la dependencia
+```
+
+> [!IMPORTANT]
+> Sin `needs`, los Jobs corren **en paralelo**. Con `needs`, corren **en secuencia** y el dependiente se cancela si el anterior falla.
+
+---
+
+## Nivel 3 -- Pipeline Completo de ML
+
+**Archivo:** `.github/workflows/03-ml-pipeline.yml`
+
+El pipeline completo con 4 eslabones encadenados formando un grafo dirigido (DAG):
 
 ```text
  [Lint]---+
@@ -127,15 +188,22 @@ Cuatro jobs encadenados que forman un grafo dirigido (DAG):
  [Test]---+
 ```
 
+### Los 4 eslabones
+
 | Eslabon | Job | Que hace | Depende de |
 |---------|-----|----------|------------|
 | 1 | **Lint** | Ejecuta `flake8` para revisar errores de sintaxis | -- |
-| 2 | **Test** | Ejecuta `pytest` para validar la logica | -- |
+| 2 | **Test** | Ejecuta `pytest` para validar la logica del codigo | -- |
 | 3 | **Train** | Entrena un RandomForest sobre Iris y sube el `.pkl` como artefacto | Lint, Test |
 | 4 | **Deploy** | Descarga el artefacto y simula un despliegue a produccion | Train |
 
-> [!IMPORTANT]
-> El job de **Train** solo se ejecuta si Lint y Test pasan exitosamente. Esto se logra con la directiva `needs: [linting, testing]` en el YAML.
+### Que aprendes?
+
+- **Jobs en paralelo**: Lint y Test corren al mismo tiempo (no dependen entre si).
+- **`needs: [linting, testing]`**: Train espera a que **ambos** pasen.
+- **Artefactos**: `upload-artifact` guarda archivos entre Jobs. `download-artifact` los recupera.
+- **`paths:`**: El workflow solo se ejecuta si cambian archivos relevantes (src, tests, etc).
+- **`permissions:`**: Principio de menor privilegio -- el workflow solo puede leer, no escribir.
 
 ### Logging tipo semaforo
 
@@ -143,9 +211,9 @@ El script `train_iris.py` usa `colorlog` para mostrar mensajes con colores segun
 
 | Color | Nivel | Significado |
 |-------|-------|-------------|
-| Verde | `INFO` | Operacion exitosa, resultado, progreso normal |
-| Amarillo | `WARNING` | Precaucion o advertencia real |
-| Rojo | `ERROR` | Fallo critico en el pipeline |
+| Verde | `INFO` | Operacion exitosa, progreso normal |
+| Amarillo | `WARNING` | Precaucion o advertencia |
+| Rojo | `ERROR` | Fallo critico |
 
 ---
 
@@ -162,18 +230,24 @@ Al hacer un fork, GitHub desactiva los workflows por seguridad.
 - Ve a la pestana **Actions** en tu repositorio.
 - Haz clic en **"I understand my workflows, go ahead and enable them"**.
 
-### 3. Disparar un workflow manualmente
+### 3. Ejecutar Nivel 1
 
-- En la pestana **Actions**, selecciona el workflow que quieras probar en el menu lateral.
-- Haz clic en **Run workflow** a la derecha.
+- En la pestana **Actions**, selecciona **"01 - Mi Primer Workflow"** en el menu lateral.
+- Haz clic en **Run workflow**.
+- Observa los logs: veras los mensajes de `echo` que escribimos en el YAML.
 
-### 4. Observar el grafo
+### 4. Ejecutar Nivel 2
 
-Una vez que inicie la ejecucion, haz clic sobre ella para ver el **grafo de dependencias** en tiempo real. Veras como Lint y Test corren en paralelo, y Training espera a que ambos terminen.
+- Selecciona **"02 - Jobs con Dependencias"**.
+- Haz clic en **Run workflow**.
+- Observa el grafo: veras dos cajas conectadas. La segunda espera a la primera.
 
-### 5. Descargar el modelo
+### 5. Ejecutar Nivel 3
 
-Al finalizar el pipeline ML, en la pagina del workflow aparece una seccion **Artifacts** con el archivo `ml-model-iris` disponible para descarga.
+- Selecciona **"03 - Pipeline Completo de ML (Iris)"**.
+- Haz clic en **Run workflow**.
+- Observa el DAG: Lint y Test corren en paralelo, Train espera a ambos, Deploy espera a Train.
+- Al finalizar, en la seccion **Artifacts** podras descargar el modelo entrenado.
 
 ---
 
@@ -221,7 +295,7 @@ uv run flake8 src/ tests/
 | **Job** | Un conjunto de pasos que se ejecutan en el mismo Runner. |
 | **Step** | Una accion individual dentro de un Job (un comando o una accion preconstruida). |
 | **Runner** | Maquina virtual efimera donde se ejecutan los Jobs. |
-| **Trigger** | Evento que dispara un Workflow (push, pull\_request, workflow\_dispatch, etc.). |
+| **Trigger** | Evento que dispara un Workflow (`push`, `pull_request`, `workflow_dispatch`). |
 | **Artifact** | Archivo generado durante un Workflow que se puede descargar o pasar entre Jobs. |
 | **needs** | Directiva YAML para declarar dependencias entre Jobs. |
 | **DAG** | Grafo Dirigido Aciclico -- la estructura que forman los Jobs con sus dependencias. |

@@ -1,24 +1,27 @@
-name: 01 - Flujo Basico (Hola Mundo)
+name: 01 - Mi Primer Workflow
 
+# TRIGGER: Cuando se dispara este flujo?
+# - Cada vez que se hace push a la rama main
+# - Manualmente desde la interfaz de GitHub (workflow_dispatch)
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
+# JOBS: Que tareas ejecutamos?
 jobs:
-  execute-hello-world:
+  hola-mundo:
+    # RUNNER: En que maquina corre? (Ubuntu gratuito de GitHub)
     runs-on: ubuntu-latest
+
+    # STEPS: Pasos secuenciales dentro del job
     steps:
-      - name: Descargar codigo
-        uses: actions/checkout@v4
+      - name: Saludar desde la nube
+        run: echo "Hola Mundo desde GitHub Actions!"
 
-      - name: Instalar uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
-
-      - name: Sincronizar dependencias
-        run: uv sync
-
-      - name: Ejecutar Hola Mundo
-        run: uv run python src/hello.py
+      - name: Mostrar informacion del runner
+        run: |
+          echo "Sistema operativo: $(uname -s)"
+          echo "Fecha y hora UTC: $(date)"
+          echo "Usuario: $(whoami)"
+          echo "Directorio actual: $(pwd)"

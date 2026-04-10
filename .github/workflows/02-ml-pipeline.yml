@@ -1,90 +1,85 @@
-name: 02 - Pipeline de Machine Learning (Eslabones Dependientes)
+name: 02 - Pipeline ML (Eslabones Dependientes)
 
 on:
   push:
     paths:
-      # Solo ejecutara este flujo si hay cambios en src/, tests/, pyproject o en este mismo archivo
-      - 'src/**'
-      - 'tests/**'
-      - 'pyproject.toml'
-      - '.github/workflows/02-ml-pipeline.yml'
+      - "src/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/02-ml-pipeline.yml"
   workflow_dispatch:
+
+# Permisos minimos necesarios (principio de menor privilegio)
+permissions:
+  contents: read
 
 jobs:
   # ==========================================
-  # ESLABON 1: LINTING (Revision de sintaxis)
+  # ESLABON 1: LINTING
   # ==========================================
   linting:
-    name: Revision de Codigo (Flake8)
+    name: Lint -- Revision de Codigo
     runs-on: ubuntu-latest
     steps:
       - name: Descargar codigo
         uses: actions/checkout@v4
-        
+
       - name: Instalar uv
         uses: astral-sh/setup-uv@v5
-        
-      - name: Configurar entorno
-        run: uv python install 3.10
-        
+        with:
+          enable-cache: true
+
       - name: Sincronizar dependencias
         run: uv sync
-        
-      - name: Revisar calidad (Lint)
+
+      - name: Ejecutar Flake8
         run: uv run flake8 src/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
 
   # ==========================================
-  # ESLABON 2: TESTING (Pruebas unitarias)
+  # ESLABON 2: TESTING
   # ==========================================
   testing:
-    name: Ejecucion de Pruebas Automaticas
+    name: Test -- Pruebas Unitarias
     runs-on: ubuntu-latest
     steps:
       - name: Descargar codigo
         uses: actions/checkout@v4
-        
+
       - name: Instalar uv
         uses: astral-sh/setup-uv@v5
-        
-      - name: Configurar entorno
-        run: uv python install 3.10
-        
+        with:
+          enable-cache: true
+
       - name: Sincronizar dependencias
         run: uv sync
-        
-      - name: Ejecutar pruebas
-        env:
-          PYTHONPATH: .
-        run: uv run pytest tests/
+
+      - name: Ejecutar Pytest
+        run: uv run pytest tests/ -v
 
   # ==========================================
-  # ESLABON 3: ENTRENAMIENTO (ML)
+  # ESLABON 3: ENTRENAMIENTO
   # ==========================================
   training:
-    name: Entrenamiento del Modelo Iris
+    name: Train -- Modelo Iris
     runs-on: ubuntu-latest
-    # AQUI ESTA LA MAGIA: Este eslabon depende explicitamente de los otros dos
     needs: [linting, testing]
-    
     steps:
       - name: Descargar codigo
         uses: actions/checkout@v4
-        
+
       - name: Instalar uv
         uses: astral-sh/setup-uv@v5
-        
-      - name: Configurar entorno
-        run: uv python install 3.10
-        
-      - name: Sincronizar dependencias (ML)
+        with:
+          enable-cache: true
+
+      - name: Sincronizar dependencias
         run: uv sync
-        
-      - name: Entrenar el modelo
-        env:
-          PYTHONPATH: .
+
+      - name: Entrenar modelo
         run: uv run python src/train_iris.py
-        
-      - name: Subir Modelo como Artefacto
+
+      - name: Subir modelo como artefacto
         uses: actions/upload-artifact@v4
         with:
           name: ml-model-iris
@@ -95,28 +90,24 @@ jobs:
   # ESLABON 4: DEPLOY SIMULADO
   # ==========================================
   deploy:
-    name: Simular Despliegue en Servidor
+    name: Deploy -- Simulacion
     runs-on: ubuntu-latest
-    # Depende de que el entrenamiento finalice correctamente
     needs: [training]
-    
     steps:
-      - name: Descargar Modelo Artefacto
+      - name: Descargar artefacto del modelo
         uses: actions/download-artifact@v4
         with:
           name: ml-model-iris
           path: models/
-          
-      - name: Mensaje de Despliegue
+
+      - name: Simular despliegue
         run: |
-          echo "=========================================================="
-          echo "INICIANDO DESPLIEGUE A PRODUCCION..."
-          echo "=========================================================="
-          echo "Encontrando archivo de modelo guardado previamente:"
-          ls -la models/
-          echo "Simulando conexion a servicio de Nube (AWS/GCP/Azure)..."
+          echo "=========================================="
+          echo " INICIANDO DESPLIEGUE A PRODUCCION"
+          echo "=========================================="
+          echo "Verificando modelo:"
+          ls -lh models/
+          echo "Simulando conexion a servicio cloud..."
           sleep 2
-          echo "Subiendo modelo exitosamente..."
-          echo "=========================================================="
-          echo "EL MODELO ESTA VIVO Y LISTO PARA INFERENCIA!"
-          echo "=========================================================="
+          echo "Modelo desplegado correctamente."
+          echo "=========================================="

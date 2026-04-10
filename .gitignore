@@ -1,4 +1,4 @@
-# Entornos Virtuales
+# Entornos virtuales
 .venv/
 venv/
 env/
@@ -9,22 +9,25 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.egg-info/
+dist/
+build/
 
-# Setup locales y uv
-.uv/
-uv.lock
-
-# Modelos y Datos
+# Modelos generados
 models/
 *.pkl
 *.model
+*.joblib
 
-# Testing y Logs
+# Testing y cobertura
 .pytest_cache/
 .coverage
+htmlcov/
 *.log
 
-# Entornos IDE
+# IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 .DS_Store

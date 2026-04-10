@@ -1,33 +1,24 @@
 name: 01 - Flujo Basico (Hola Mundo)
 
-# Cuando se ejecuta esto? (Triggers)
 on:
   push:
-    branches:
-      - main
-  # workflow_dispatch permite ejecutar el flujo de forma manual desde la interfaz de GitHub
+    branches: [main]
   workflow_dispatch:
 
-# Que tareas tiene este flujo de trabajo?
 jobs:
-  excecute-hello-world:
-    # En que tipo de maquina (Runner) correremos esto?
+  execute-hello-world:
     runs-on: ubuntu-latest
-
-    # Pasos secuenciales del Job
     steps:
-      # Paso 1: "Clonar" o traer el codigo de tu repositorio a la maquina de GitHub Actions
-      - name: Descargar codigo del repositorio
+      - name: Descargar codigo
         uses: actions/checkout@v4
 
-      # Paso 2: Instalar uv de forma super rapida
       - name: Instalar uv
         uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
 
-      # Paso 3: Configurar entorno Python e instalar dependencias si es necesario
-      - name: Configurar entorno Python
-        run: uv python install 3.10
+      - name: Sincronizar dependencias
+        run: uv sync
 
-      # Paso 4: Ejecutar nuestro script
       - name: Ejecutar Hola Mundo
         run: uv run python src/hello.py

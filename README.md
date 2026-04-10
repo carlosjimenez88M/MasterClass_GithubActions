@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/python-3.10+-blue?logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/python-3.13+-blue?logo=python&logoColor=white" alt="Python"/>
   <img src="https://img.shields.io/badge/uv-package_manager-blueviolet?logo=astral&logoColor=white" alt="uv"/>
   <img src="https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=githubactions&logoColor=white" alt="GitHub Actions"/>
   <img src="https://img.shields.io/badge/ML-scikit--learn-F7931E?logo=scikit-learn&logoColor=white" alt="scikit-learn"/>

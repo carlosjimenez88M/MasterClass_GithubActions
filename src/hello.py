@@ -3,7 +3,7 @@
 
 def hello_world() -> str:
     """Retorna un saludo simple."""
-    return "Hola Mundo desde GitHub Actions!"
+    return "Hola Mundo desde GitHub Actions! Soy Fabio 😃"
 
 
 if __name__ == "__main__":
